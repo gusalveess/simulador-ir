@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=wZrW7muRzJ0c
+    volumes:
+      - ./backend/data/db:/var/lib/postgresql/data
+    env_file:
+      - ./backend/.env
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+    command: >
+      sh -c "npm install && npx nest start --watch"
+    volumes:
+    - ./backend:/workspace/backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+    env_file:
+      - ./frontend/.env
+    command: npm run dev # Inicia o servidor de desenvolvimento
+    volumes:
+      - ./frontend:/workspace/frontend
+    ports:
+      - "3000:3000"
