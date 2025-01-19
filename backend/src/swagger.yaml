@@ -1,0 +1,239 @@
+swagger: "2.0"
+info:
+  title: "API de Simulação de Preenchimento de Imposto de Renda"
+  description: "Documentação da API para autenticação de usuários e manipulação de declarações fiscais."
+  version: "1.0.0"
+paths:
+  /auth/register:
+    post:
+      summary: "Registrar um novo usuário"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Informações do usuário para registro"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              nome:
+                type: "string"
+              email:
+                type: "string"
+              senha:
+                type: "string"
+      responses:
+        201:
+          description: "Usuário registrado com sucesso"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+                example: "Usuário registrado com sucesso!"
+              userId:
+                type: "integer"
+        400:
+          description: "Erro ao registrar usuário"
+
+  /auth/login:
+    post:
+      summary: "Realizar login de um usuário"
+      description: "Realiza a autenticação de um usuário, sendo obrigatório o código de 2FA apenas se a autenticação de dois fatores estiver ativada."
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Credenciais para login"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              email:
+                type: "string"
+              senha:
+                type: "string"
+              token2fa:
+                type: "string"
+      responses:
+        200:
+          description: "Login realizado com sucesso"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+                example: "Login realizado com sucesso!"
+              token:
+                type: "string"
+        401:
+          description: "Credenciais inválidas ou falha na autenticação"
+
+  /auth/enable-2fa/{userId}:
+    post:
+      summary: "Ativar autenticação de dois fatores para o usuário"
+      parameters:
+        - in: "path"
+          name: "userId"
+          required: true
+          type: "integer"
+          description: "ID do usuário"
+      responses:
+        200:
+          description: "Autenticação de dois fatores ativada com sucesso"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+                example: "Autenticação de dois fatores ativada com sucesso."
+              qrCodeUrl:
+                type: "string"
+                example: "https://example.com/qrcode"
+        404:
+          description: "Usuário não encontrado"
+        409:
+          description: "Autenticação de dois fatores já ativada"
+
+  /declaracoes/{userId}:
+    post:
+      summary: "Criar uma nova declaração"
+      parameters:
+        - in: "path"
+          name: "userId"
+          required: true
+          type: "integer"
+          description: "ID do usuário"
+        - in: "body"
+          name: "body"
+          description: "Dados da declaração a ser criada"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              ano:
+                type: "integer"
+              dados:
+                type: "object"
+      responses:
+        201:
+          description: "Declaração criada com sucesso"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+                example: "Declaração criada com sucesso!"
+              declaracao:
+                type: "object"
+        400:
+          description: "Erro ao criar declaração"
+
+  /declaracoes/{userId}:
+    get:
+      summary: "Listar todas as declarações de um usuário"
+      parameters:
+        - in: "path"
+          name: "userId"
+          required: true
+          type: "integer"
+          description: "ID do usuário"
+      responses:
+        200:
+          description: "Lista de declarações"
+          schema:
+            type: "array"
+            items:
+              type: "object"
+        404:
+          description: "Nenhuma declaração encontrada"
+
+  /declaracoes/{userId}/{id}:
+    get:
+      summary: "Obter uma declaração específica"
+      parameters:
+        - in: "path"
+          name: "userId"
+          required: true
+          type: "integer"
+          description: "ID do usuário"
+        - in: "path"
+          name: "id"
+          required: true
+          type: "integer"
+          description: "ID da declaração"
+      responses:
+        200:
+          description: "Declaração encontrada"
+          schema:
+            type: "object"
+            properties:
+              declaracao:
+                type: "object"
+        404:
+          description: "Declaração não encontrada"
+
+  /declaracoes/{userId}/{id}:
+    patch:
+      summary: "Atualizar uma declaração"
+      parameters:
+        - in: "path"
+          name: "userId"
+          required: true
+          type: "integer"
+          description: "ID do usuário"
+        - in: "path"
+          name: "id"
+          required: true
+          type: "integer"
+          description: "ID da declaração"
+        - in: "body"
+          name: "body"
+          description: "Dados para atualizar a declaração"
+          required: true
+          schema:
+            type: "object"
+            properties:
+              ano:
+                type: "integer"
+              dados:
+                type: "object"
+      responses:
+        200:
+          description: "Declaração atualizada com sucesso"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+                example: "Declaração atualizada com sucesso!"
+              declaracao:
+                type: "object"
+        400:
+          description: "Erro ao atualizar declaração"
+        404:
+          description: "Declaração não encontrada"
+
+  /declaracoes/{userId}/{id}:
+    delete:
+      summary: "Deletar uma declaração"
+      parameters:
+        - in: "path"
+          name: "userId"
+          required: true
+          type: "integer"
+          description: "ID do usuário"
+        - in: "path"
+          name: "id"
+          required: true
+          type: "integer"
+          description: "ID da declaração"
+      responses:
+        200:
+          description: "Declaração removida com sucesso"
+          schema:
+            type: "object"
+            properties:
+              message:
+                type: "string"
+                example: "Declaração removida com sucesso!"
+        404:
+          description: "Declaração não encontrada"

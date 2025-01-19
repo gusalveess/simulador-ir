@@ -1,8 +1,6 @@
 services:
   db:
     image: postgres
-    environment:
-      - POSTGRES_PASSWORD=wZrW7muRzJ0c
     volumes:
       - ./backend/data/db:/var/lib/postgresql/data
     env_file:
