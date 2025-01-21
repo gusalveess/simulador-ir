@@ -2,7 +2,9 @@
 
 Este projeto simula o preenchimento de declarações de imposto de renda com backend em **NestJS** e frontend em **ReactJS**. O backend utiliza **PostgreSQL** para armazenar os dados e **Jest** para testes unitários.
 
-## Tecnologias
+---
+
+## 📌 Tecnologias
 
 - **Backend**: NestJS, TypeScript, TypeORM, PostgreSQL
 - **Frontend**: NextJS, TypeScript, TailwindCSS
@@ -10,158 +12,161 @@ Este projeto simula o preenchimento de declarações de imposto de renda com bac
 - **Testes**: Jest
 - **Containerização**: Docker
 
-## Banco de Dados
+---
 
-Antes de rodar o projeto, certifique-se de criar o banco de dados e as tabelas necessárias. Use os scripts abaixo para configurar o banco localmente:
+## ⚙️ Configuração das Variáveis de Ambiente
+
+Crie um arquivo `.env` para definir as variáveis de ambiente do backend e do frontend.
+
+### 🔹 Backend
+
+**Caso esteja utilizando Docker**, crie o arquivo `.env` dentro da pasta `backend` com:
 
 ```ini
--- Criar database
+POSTGRES_HOST=simulador-ir-db-1
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+DATABASE_NAME=simulador_ir
+JWT_SECRET={SUA_CHAVE_SECRETA}
+PORT=8000
+```
+### 🔹 Frontend
+O arquivo .env deve ser criado na pasta frontend e é o mesmo para qualquer ambiente:
+
+```ini
+VITE_API_URL=http://localhost:8000
+VITE_PORT=5173
+```
+## 🚀 Como Executar o Projeto
+### 🔹 Com Docker
+
+Este é o método mais simples para rodar o projeto sem precisar instalar dependências manualmente.
+
+1. Clone o repositório:
+
+bash
+git clone https://github.com/gusalveess/simulador-ir.git
+cd simulador-ir
+```
+2. Inicie os containers do backend e banco de dados PostgreSQL:
+
+bash
+sudo docker-compose up --build
+```
+3. Acesse a aplicação:
+
+bash
+Backend: http://localhost:8000
+Frontend: http://localhost:5173
+```
+### 🔹 Sem Docker (Rodando Localmente)
+1. Instale as dependências do backend e frontend:
+
+```bash
+cd backend
+npm install
+
+cd ../frontend
+npm install
+```
+2. Configure o banco de dados PostgreSQL localmente criando a base de dados:
+
+```sql
 CREATE DATABASE simulador_ir;
+```
+3. Criação das tabelas (necessário apenas se rodando sem Docker):
 
--- Table: public.usuarios
-
+```sql
 CREATE TABLE IF NOT EXISTS public.usuarios
 (
-    id integer NOT NULL DEFAULT nextval('usuarios_id_seq'::regclass),
-    nome character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    email character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    "senhaHash" text COLLATE pg_catalog."default" NOT NULL,
-    "criadoEm" timestamp without time zone NOT NULL DEFAULT now(),
-    "twoFactorSecret" character varying COLLATE pg_catalog."default",
-    "is2FAEnabled" boolean NOT NULL DEFAULT false,
-    CONSTRAINT usuarios_pkey PRIMARY KEY (id)
-)
-TABLESPACE pg_default;
-
--- Table: public.declaracoes
-
-CREATE TABLE IF NOT EXISTS public.declaracoes
-(
-    id integer NOT NULL DEFAULT nextval('declaracoes_id_seq'::regclass),
-    ano integer NOT NULL,
-    dados jsonb NOT NULL,
-    status character varying(50) COLLATE pg_catalog."default" NOT NULL DEFAULT 'nao submetida'::character varying,
-    "criadoEm" timestamp without time zone NOT NULL DEFAULT now(),
-    "usuarioId" integer,
-    CONSTRAINT declaracoes_pkey PRIMARY KEY (id),
-    CONSTRAINT "FK_136377835de7020dd99dad8ce6b" FOREIGN KEY ("usuarioId")
-        REFERENCES public.usuarios (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE CASCADE
-)
-TABLESPACE pg_default;
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    "senhaHash" TEXT NOT NULL,
+    "criadoEm" TIMESTAMP DEFAULT now(),
+    "twoFactorSecret" VARCHAR,
+    "is2FAEnabled" BOOLEAN DEFAULT false
+);
 ```
 
-## Como Executar o Projeto
+```sql
+CREATE TABLE IF NOT EXISTS public.declaracoes
+(
+    id SERIAL PRIMARY KEY,
+    ano INTEGER NOT NULL,
+    dados JSONB NOT NULL,
+    status VARCHAR(50) DEFAULT 'Não Submetida',
+    "criadoEm" TIMESTAMP DEFAULT now(),
+    "usuarioId" INTEGER REFERENCES public.usuarios(id) ON DELETE CASCADE
+);
+```
+4. Inicie o backend:
 
-### Com Docker
+```bash
+cd backend
+npm run start:dev
+```
+5. Inicie o frontend:
 
-Este método é o mais simples para rodar o projeto de forma isolada, sem a necessidade de instalação de dependências adicionais.
+```bash
+cd frontend
+npm run dev
+```
 
-1. Clone o repositório para sua máquina:
+5. Acesse a aplicação:
 
-    ```bash
-    git clone https://github.com/gusalveess/simulador-ir.git
-    cd simulador-ir
-    ```
+```bash
+Backend: http://localhost:8000
+Frontend: http://localhost:5173
+```
 
-2. Rode o Docker Compose para construir e iniciar os containers (backend e banco de dados PostgreSQL):
+## 🧪 Testes Unitários com Jest
+O backend utiliza Jest para testes unitários. Para rodar os testes:
 
-    ```bash
-    docker-compose up --build
-    ```
+### Com Docker:
 
-3. O **backend** estará disponível em `http://localhost:8000` e o **frontend** em `http://localhost:3000`.
+```bash
+docker-compose exec backend npm run test
+```
+### Sem Docker (localmente):
 
-4. Se você quiser rodar os testes unitários back-end do **Jest** no Docker, use:
+```bash
+cd backend
+npm run test
+```
 
-    ```bash
-    docker-compose exec backend npm run test
-    ```
+## 📜 Documentação da API
+A API possui documentação no Swagger, acessível em:
 
-### Sem Docker (Localmente)
+```bash
+http://localhost:8000/docs
+```
 
-Se preferir rodar o projeto sem Docker, siga as etapas abaixo.
+## 🚀 CI/CD Pipeline
+O projeto utiliza GitHub Actions para Integração Contínua (CI) e Entrega Contínua (CD).
 
-1. **Instale as dependências** no backend e no frontend:
-
-    No backend:
-
-    ```bash
-    cd backend
-    npm install
-    ```
-
-    No frontend:
-
-    ```bash
-    cd frontend
-    npm install
-    ```
-
-
-2. **Crie o arquivo `.env` no backend** com a seguinte configuração:
-
-    ```ini
-    POSTGRES_HOST=localhost
-    POSTGRES_PORT=5432
-    POSTGRES_USER={SEU_USUÁRIO_LOCAL_DO_POSTGRES}
-    POSTGRES_PASSWORD={SUA_SENHA_DO_POSTGRES}
-    DATABASE_NAME=simulador_ir
-    JWT_SECRET={VALOR DE SUA ESCOLHA}
-    PORT=8000
-    ```
-
-3. **Execute o backend**:
-
-    No backend, use:
-
-    ```bash
-    npm run start:dev
-    ```
-
-4. **Execute o frontend**:
-
-    No frontend, use:
-
-    ```bash
-    npm run start
-    ```
-
-Agora, o backend estará rodando em `http://localhost:8000` e o frontend em `http://localhost:3000`.
-
-## Testes Unitários com Jest
-
-O projeto utiliza **Jest** para testes unitários no backend. Para rodar os testes:
-
-1. Se estiver usando Docker:
-
-    ```bash
-    docker-compose exec backend npm run test
-    ```
-
-2. Se rodando localmente:
-
-    ```bash
-    cd backend
-    npm run test
-    ```
-
-## Documentação da API
-
-A documentação da API em Swagger pode ser acessada no endpoint `http://localhost:8000/docs` após a execução da aplicação.
-
-## CI/CD Pipeline
-
-Este projeto está configurado com um pipeline de Integração Contínua (CI) e Entrega Contínua (CD) utilizando o GitHub Actions. O fluxo de CI/CD foi projetado para garantir que cada alteração no código seja validada de maneira automática e eficiente, antes de ser integrada ao código principal.
-
-#### Fluxo de Trabalho
+### 🔹 Backend
 A pipeline é acionada automaticamente nos seguintes eventos:
 
-Push para o branch main
-Pull Request para o branch main
+- Push para o branch main
+- Pull Request para o branch main
+
 O processo é dividido em duas etapas principais:
 
-Testes: Em seguida, o código é testado automaticamente. Os testes são executados para garantir que as funcionalidades estejam funcionando corretamente, e um relatório de cobertura de testes é gerado.
+1. **Testes**: Em seguida, o código é testado automaticamente. Os testes são executados para garantir que as funcionalidades estejam funcionando corretamente, e um relatório de cobertura de testes é gerado.
+   
+2. **Build**: Por fim, o processo de build é realizado, preparando o código para a produção e verificando se o processo de compilação é bem-sucedido.
+### 🔹 Frontend
+A pipeline para o frontend segue uma abordagem similar, sendo acionada automaticamente nos seguintes eventos:
 
-Build: Por fim, o processo de build é realizado, preparando o código para a produção e verificando se o processo de compilação é bem-sucedido.
+- Push para o branch main
+- Pull Request para o branch main
+
+As etapas incluem:
+
+1. **Instalação de Dependências**: O GitHub Actions instala todas as dependências necessárias para o projeto frontend.
+   
+2. **Build**: O código é compilado usando o Vite para gerar a versão de produção da aplicação.
+
+## 🎯 Agora seu projeto está organizado e pronto para rodar de forma eficiente!

@@ -5,11 +5,19 @@ import * as swaggerUi from 'swagger-ui-express';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yamljs';
+import * as cors from 'cors';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
 
   const swaggerPath = path.resolve(__dirname, '../src', 'swagger.yaml');
 

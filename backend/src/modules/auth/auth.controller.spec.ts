@@ -5,7 +5,9 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as speakeasy from 'speakeasy';
 import { User } from '../users/user.entity';
+import { HttpStatus } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Response } from 'express';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -34,6 +36,7 @@ describe('AuthController', () => {
       }),
     };
 
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
@@ -60,24 +63,102 @@ describe('AuthController', () => {
   });
 
   describe('register', () => {
-    it('should register a user successfully', async () => {
-      const createUserDto = { nome: 'Gustavo Alves', email: 'gustavo_teste@gmail.com', senha: 'password123' };
-      const user = { id: 1, ...createUserDto, senhaHash: 'hashedpassword' };
+    const mockResponse = () => {
+      const res: Partial<Response> = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis(),  
+      };
+      return res as Response;
+    };
 
-      jest.spyOn(usersService, 'create').mockResolvedValue(user as any);
+    const res = mockResponse()
 
-      const result = await controller.register(createUserDto);
+    it('should return error if fields are missing', async () => {
+      const body = { nome: '', email: '', senha: '' };
 
-      expect(result).toEqual({
-        message: 'Usuário registrado com sucesso!',
-        userId: user.id,
+      await controller.register(body, res);
+
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Nome, E-mail e Senha são obrigatórios.',
       });
+    });
 
-      expect(usersService.create).toHaveBeenCalledWith(createUserDto.nome, createUserDto.email, createUserDto.senha);
+    it('should return error if email is invalid', async () => {
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+      const body = { nome: 'Test User', email: 'invalid-email', senha: 'password123' };
+
+      await controller.register(body, res);
+
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Email inválido.',
+      });
+    });
+
+    it('should return error if email is already registered', async () => {
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+      const body = { nome: 'Test User', email: 'test@example.com', senha: 'password123' };
+      
+      const mockUser = new User();
+      mockUser.id = 1;
+      mockUser.nome = 'Usuário Teste';
+      mockUser.email = 'test@example.com';
+      mockUser.senhaHash = 'hashedpassword123';
+      mockUser.criadoEm = new Date();
+      mockUser.twoFactorSecret = null;
+      mockUser.is2FAEnabled = false;
+      mockUser.declaracoes = [];
+      
+      jest.spyOn(usersService, 'findByEmail').mockResolvedValueOnce(mockUser);
+
+      await controller.register(body, res);
+
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Email já registrado.',
+      });
+    });
+
+    it('should be register a new user successfully', async () => {
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+      const body = { nome: 'Test User', email: 'test@example.com', senha: 'password123' };
+
+      jest.spyOn(usersService, 'findByEmail').mockResolvedValueOnce(null);
+      const mockUser = new User();
+      mockUser.id = 1;
+      mockUser.nome = 'Usuário Teste';
+      mockUser.email = 'test@example.com';
+      mockUser.senhaHash = 'hashedpassword123';
+      mockUser.criadoEm = new Date();
+      mockUser.twoFactorSecret = null;
+      mockUser.is2FAEnabled = false;
+      
+      jest.spyOn(usersService, 'create').mockResolvedValueOnce(mockUser);
+
+      await controller.register(body, res);
+
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.CREATED);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Usuário registrado com sucesso!',
+        userId: 1,
+      });
     });
   });
 
   describe('login', () => {
+
+    const mockResponse = () => {
+      const res: Partial<Response> = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis(),  
+      };
+      return res as Response;
+    };
+
+    const res = mockResponse()
+
+
     it('should login successfully without 2FA', async () => {
       const loginDto = { email: 'gustavo_teste@gmail.com', senha: 'password123' };
       const user = { id: 1, email: 'gustavo_teste@gmail.com', senhaHash: 'hashedpassword' };
@@ -86,11 +167,15 @@ describe('AuthController', () => {
       jest.spyOn(usersService, 'validateUserCredentials').mockResolvedValue(user as any);
       jest.spyOn(authService, 'generateJwt').mockResolvedValue(token);
 
-      const result = await controller.login(loginDto);
+      await controller.login(loginDto, res);
 
-      expect(result).toEqual({
+
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(res.json).toHaveBeenCalledWith({
+        statusCode: HttpStatus.OK,
         message: 'Login realizado com sucesso!',
         token,
+        user: user.id
       });
 
       expect(usersService.validateUserCredentials).toHaveBeenCalledWith(loginDto.email, loginDto.senha);
@@ -103,9 +188,9 @@ describe('AuthController', () => {
       jest.spyOn(usersService, 'validateUserCredentials').mockResolvedValue(null);
     
       try {
-        await controller.login(loginDto);
+        await controller.login(loginDto, res);
       } catch (e) {
-        expect(e.status).toBe(401);
+        expect(e.status).toBe(HttpStatus.UNAUTHORIZED);
         expect(e.response).toBe('Credenciais inválidas.');
       }
     });
@@ -118,32 +203,45 @@ describe('AuthController', () => {
       jest.spyOn(speakeasy.totp, 'verify').mockReturnValue(false);
     
       try {
-        await controller.login(loginDto);
+        await controller.login(loginDto, res);
       } catch (e) {
-        expect(e.status).toBe(401);
-        expect(e.response).toBe('Código de 2FA inválido.');
+        expect(e.status).toBe(HttpStatus.UNAUTHORIZED);
+        expect(e.response.json).toBe('Código de 2FA inválido.');
       }
     });
   });
 
   describe('enableTwoFactorAuth', () => {
+
+    const mockResponse = () => {
+      const res: Partial<Response> = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis(),  
+      };
+      return res as Response;
+    };
+
+    const res = mockResponse()
+
     it('should enable two-factor authentication successfully', async () => {
       const userId = 1;
       const user = { id: userId, email: 'gustavo_teste@gmail.com', twoFactorSecret: null };
       const secret = 'mockSecret';
       const qrCodeUrl = 'mockQRCodeUrl';
-
+    
       jest.spyOn(usersService, 'findById').mockResolvedValue(user as any);
       jest.spyOn(usersService, 'generate2FA').mockResolvedValue({ secret, qrCodeUrl });
       jest.spyOn(usersService, 'updateTwoFactorSecret').mockResolvedValue(null);
-
-      const result = await controller.enableTwoFactorAuth(userId);
-
-      expect(result).toEqual({
+    
+      await controller.enableTwoFactorAuth(userId, res);
+    
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(res.json).toHaveBeenCalledWith({
         message: 'Autenticação de dois fatores ativada com sucesso.',
         qrCodeUrl,
+        statusCode: HttpStatus.OK
       });
-
+    
       expect(usersService.findById).toHaveBeenCalledWith(userId);
       expect(usersService.generate2FA).toHaveBeenCalledWith(userId);
       expect(usersService.updateTwoFactorSecret).toHaveBeenCalledWith(userId, secret);
@@ -155,16 +253,20 @@ describe('AuthController', () => {
     
       jest.spyOn(usersService, 'findById').mockResolvedValue(user as any);
     
-      const generate2FAMock = jest.spyOn(usersService, 'generate2FA').mockImplementation(() => Promise.resolve({ secret: 'mockSecret', qrCodeUrl: 'mockQRCodeUrl' }));
+      const generate2FAMock = jest.spyOn(usersService, 'generate2FA').mockImplementation(() =>
+        Promise.resolve({ secret: 'mockSecret', qrCodeUrl: 'mockQRCodeUrl' })
+      );
     
-      const result = await controller.enableTwoFactorAuth(userId);
+      await controller.enableTwoFactorAuth(userId, res);
     
-      expect(result).toEqual({
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+      expect(res.json).toHaveBeenCalledWith({
+        statusCode: HttpStatus.BAD_REQUEST,
         message: 'A autenticação de dois fatores já está ativada para este usuário.',
       });
     
       expect(usersService.findById).toHaveBeenCalledWith(userId);
-      expect(generate2FAMock).not.toHaveBeenCalled(); 
+      expect(generate2FAMock).not.toHaveBeenCalled();
     });
 
     it('should throw an error if user is not found', async () => {
@@ -173,10 +275,11 @@ describe('AuthController', () => {
       jest.spyOn(usersService, 'findById').mockResolvedValue(null);
 
       try {
-        await controller.enableTwoFactorAuth(userId);
+        await controller.enableTwoFactorAuth(userId, res);
       } catch (e) {
-        expect(e.status).toBe(404);
-        expect(e.response).toBe('Usuário não encontrado.');
+        console.log(e)
+        expect(e.status).toBe(HttpStatus.NOT_FOUND);
+        expect(e.res).toBe('Usuário não encontrado.');
       }
     });
   });

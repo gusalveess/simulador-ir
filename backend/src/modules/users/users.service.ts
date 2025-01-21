@@ -46,6 +46,18 @@ export class UsersService {
     return result;
   }
 
+  async disableTwoFactorSecret(userId: number) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('Usuário não encontrado');
+    }
+  
+    user.twoFactorSecret = null;
+    user.is2FAEnabled = false;
+    const result = await this.usersRepository.save(user);
+    return result;
+  }
+
   async validateUserCredentials(email: string, senha: string): Promise<User | null> {
     const user = await this.usersRepository.findOne({ where: { email } });
     if (user && bcrypt.compareSync(senha, user.senhaHash)) {

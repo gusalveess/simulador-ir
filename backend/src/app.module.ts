@@ -19,12 +19,7 @@ import { AuthModule } from './modules/auth/auth.module';
       database: process.env.DATABASE_NAME,
       autoLoadEntities: true,
       synchronize: true,
-      ssl: true,
-      extra: {
-        ssl: {
-          rejectUnauthorized: false,
-        },
-      },
+      ssl: false,
     }),
     TypeOrmModule.forFeature([User, Declaracao]),
     UsersModule,

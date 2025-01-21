@@ -15,8 +15,8 @@ export class DeclaracoesService {
     const novaDeclaracao = this.declaracaoRepository.create({
       usuario: { id: userId } as User,
       ano,
-      dados,
-      status: 'não submetida',
+      dados: { ...dados },
+      status: 'Não Submetida',
     });
 
     return await this.declaracaoRepository.save(novaDeclaracao);
@@ -40,6 +40,15 @@ export class DeclaracoesService {
     if (!declaracao) return null;
 
     declaracao.dados = dados;
+    return this.declaracaoRepository.save(declaracao);
+  }
+
+  async enviarDeclaracao(id: number, userId: number, dados: object): Promise<Declaracao> {
+    const declaracao = await this.obterDeclaracao(id, userId);
+    if (!declaracao) return null;
+
+    declaracao.dados = dados;
+    declaracao.status = "Submetida"
     return this.declaracaoRepository.save(declaracao);
   }
 

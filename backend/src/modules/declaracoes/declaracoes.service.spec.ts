@@ -44,7 +44,7 @@ describe('DeclaracoesService', () => {
       usuario: { id: userId }, 
       ano, 
       dados, 
-      status: 'não submetida',
+      status: 'Não Submetida',
     };
     repository.create.mockReturnValue(mockDeclaracao);
     repository.save.mockResolvedValue(mockDeclaracao);
@@ -55,7 +55,7 @@ describe('DeclaracoesService', () => {
       usuario: { id: userId } as User,
       ano,
       dados,
-      status: 'não submetida',
+      status: 'Não Submetida',
     });
     expect(repository.save).toHaveBeenCalledWith(mockDeclaracao);
   });

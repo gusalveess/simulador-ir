@@ -2,11 +2,21 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DeclaracoesController } from './declaracoes.controller';
 import { DeclaracoesService } from './declaracoes.service';
 import { CriarDeclaracaoDto, AtualizarDeclaracaoDto } from '../../shared/declaracao.dto';
-import { HttpException } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
+import { Response } from 'express';
 
 describe('DeclaracoesController', () => {
   let controller: DeclaracoesController;
   let service: DeclaracoesService;
+  const mockResponse = () => {
+    const res: Partial<Response> = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),  
+    };
+    return res as Response;
+  };
+
+  const res = mockResponse()
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -36,10 +46,13 @@ describe('DeclaracoesController', () => {
 
     jest.spyOn(service, 'criarDeclaracao').mockImplementation(jest.fn().mockResolvedValue(declaracaoMock));
 
-    const result = await controller.criarDeclaracao(userId, dto);
+    await controller.criarDeclaracao(userId, dto, res);
 
-    expect(result.message).toBe('Declaração criada com sucesso!');
-    expect(result.declaracao).toEqual(declaracaoMock);
+    expect(res.status).toHaveBeenCalledWith(HttpStatus.CREATED)
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Declaração criada com sucesso!',
+      declaracao: declaracaoMock
+    });
   });
 
   it('should list declarations for a user', async () => {
@@ -47,10 +60,12 @@ describe('DeclaracoesController', () => {
     const declaracoes = [{ id: 1, ano: 2025, dados: {} }];
     jest.spyOn(service, 'listarDeclaracoesPorUsuario').mockImplementation(jest.fn().mockResolvedValue(declaracoes));
 
-    const result = await controller.listarDeclaracoes(userId);
+    await controller.listarDeclaracoes(userId, res);
     
-    expect(result).toEqual(declaracoes);
-    expect(service.listarDeclaracoesPorUsuario).toHaveBeenCalledWith(userId);
+    expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
+    expect(res.json).toHaveBeenCalledWith({
+      declaracoes,
+    });
   });
 
   it('should return a specific declaration for a user', async () => {
@@ -59,9 +74,13 @@ describe('DeclaracoesController', () => {
     const declaracao = { id, ano: 2025, dados: {} };
     jest.spyOn(service, 'obterDeclaracao').mockImplementation(jest.fn().mockResolvedValue(declaracao));
 
-    const result = await controller.obterDeclaracao(userId, id);
+    await controller.obterDeclaracao(userId, id, res);
     
-    expect(result).toEqual(declaracao);
+    expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
+    expect(res.json).toHaveBeenCalledWith({
+      userId,
+      declaracao,
+    });
     expect(service.obterDeclaracao).toHaveBeenCalledWith(id, userId);
   });
 
@@ -72,9 +91,10 @@ describe('DeclaracoesController', () => {
     const declaracaoAtualizada = { id, ano: 2025, dados: {} };
     jest.spyOn(service, 'atualizarDeclaracao').mockImplementation(jest.fn().mockResolvedValue(declaracaoAtualizada));
 
-    const result = await controller.atualizarDeclaracao(userId, id, dto);
+    await controller.atualizarDeclaracao(userId, id, dto, res);
     
-    expect(result).toEqual({
+    expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
+    expect(res.json).toHaveBeenCalledWith({
       message: 'Declaração atualizada com sucesso!',
       declaracaoAtualizada,
     });
@@ -86,9 +106,10 @@ describe('DeclaracoesController', () => {
     const id = 1;
     jest.spyOn(service, 'deletarDeclaracao').mockResolvedValue(true);
 
-    const result = await controller.deletarDeclaracao(userId, id);
+    await controller.deletarDeclaracao(userId, id, res);
     
-    expect(result).toEqual({ message: 'Declaração removida com sucesso!' });
+    expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
+    expect(res.json).toHaveBeenCalledWith({ message: 'Declaração removida com sucesso!' });
     expect(service.deletarDeclaracao).toHaveBeenCalledWith(id, userId);
   });
 
@@ -97,10 +118,13 @@ describe('DeclaracoesController', () => {
     jest.spyOn(service, 'listarDeclaracoesPorUsuario').mockResolvedValue([]);
 
     try {
-      await controller.listarDeclaracoes(userId);
+      await controller.listarDeclaracoes(userId, res);
     } catch (error) {
-      expect(error.response).toBe('Nenhuma declaração encontrada para este usuário.');
-      expect(error.status).toBe(404);
+      console.log(error)
+      expect(error.status).toBe(HttpStatus.NOT_FOUND)
+      expect(error.json).toHaveBeenCalledWith({
+        message: 'Nenhuma declaração encontrada para este usuário.',
+      });
     }
   });
 });
