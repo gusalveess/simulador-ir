@@ -45,18 +45,18 @@ Este é o método mais simples para rodar o projeto sem precisar instalar depend
 
 1. Clone o repositório:
 
-bash
+```bash
 git clone https://github.com/gusalveess/simulador-ir.git
 cd simulador-ir
 ```
 2. Inicie os containers do backend e banco de dados PostgreSQL:
 
-bash
+```bash
 sudo docker-compose up --build
 ```
 3. Acesse a aplicação:
 
-bash
+```bash
 Backend: http://localhost:8000
 Frontend: http://localhost:5173
 ```
