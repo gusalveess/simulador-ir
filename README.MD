@@ -7,7 +7,7 @@ Este projeto simula o preenchimento de declarações de imposto de renda com bac
 ## 📌 Tecnologias
 
 - **Backend**: NestJS, TypeScript, TypeORM, PostgreSQL
-- **Frontend**: NextJS, TypeScript, TailwindCSS
+- **Frontend**: React, TypeScript, TailwindCSS
 - **Banco de Dados**: PostgreSQL
 - **Testes**: Jest
 - **Containerização**: Docker
