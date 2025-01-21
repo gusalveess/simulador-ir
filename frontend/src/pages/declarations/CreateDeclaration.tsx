@@ -117,10 +117,8 @@ const CreateDeclaration: React.FC = () => {
 
         setIsSaving(true);
         const data = returnData();
-        console.log(data)
 
         try {
-            if (hasChanges(returnData)) {
                 await updateDeclaration(userId, declarationId, data);
                 toast.success('Declaração salva com sucesso.', {
                     position: "top-center",
@@ -134,20 +132,6 @@ const CreateDeclaration: React.FC = () => {
                     transition: Bounce,
                 });
                 setIsModalOpen(false);
-            } else {
-                toast.info('Nenhuma alteração encontrada.', {
-                    position: "top-center",
-                    autoClose: 5000,
-                    hideProgressBar: false,
-                    closeOnClick: false,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme: "light",
-                    transition: Bounce,
-                });
-                setIsModalOpen(false);
-            }
         } catch (error) {
             toast.error('Erro ao salvar declaração', {
                 position: "top-center",
@@ -166,9 +150,6 @@ const CreateDeclaration: React.FC = () => {
         }
     };
 
-    const hasChanges = (data: any) => {
-        return true;
-    };
 
     const handleCancelFill = () => {
         setIsModalOpen(false);
@@ -178,7 +159,6 @@ const CreateDeclaration: React.FC = () => {
         const data = returnData();
 
         try {
-            if (hasChanges(returnData)) {
                 await sendDeclaration(userId, declarationId, data);
                 toast.success('Declaração enviada com sucesso.', {
                     position: "top-center",
@@ -193,20 +173,6 @@ const CreateDeclaration: React.FC = () => {
                 });
                 setIsModalOpen(false);
                 navigate("/dashboard")
-            } else {
-                toast.info('Nenhuma alteração encontrada.', {
-                    position: "top-center",
-                    autoClose: 5000,
-                    hideProgressBar: false,
-                    closeOnClick: false,
-                    pauseOnHover: true,
-                    draggable: true,
-                    progress: undefined,
-                    theme: "light",
-                    transition: Bounce,
-                });
-                setIsModalOpen(false);
-            }
         } catch (error) {
             toast.error('Erro ao salvar declaração', {
                 position: "top-center",

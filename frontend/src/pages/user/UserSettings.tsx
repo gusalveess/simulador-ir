@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { getUserInfo, enableTwoFactorAuth, disableTwoFactorAuth } from "../../services/userService";
 import ModalChildren from "../../components/ModalChildren";
 import ModalConfirmation from "../../components/ModalConfirm";
